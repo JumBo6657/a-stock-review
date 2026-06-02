@@ -1,0 +1,330 @@
+/* ============================================
+   大盘情绪页面样式
+   ============================================ */
+
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    grid-template-rows: auto auto auto;
+    gap: var(--spacing-lg);
+}
+
+/* 市场概览 - 跨4列 */
+.market-overview {
+    grid-column: 1 / -1;
+}
+
+.index-cards {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--spacing-md);
+}
+
+.index-card {
+    background: var(--bg-secondary);
+    border-radius: var(--border-radius);
+    padding: var(--spacing-lg);
+    text-align: center;
+    border: 1px solid var(--border-color);
+    transition: all var(--transition-normal);
+}
+
+.index-card:hover {
+    border-color: var(--accent-primary);
+    transform: translateY(-2px);
+}
+
+.index-name {
+    display: block;
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-bottom: var(--spacing-sm);
+}
+
+.index-value {
+    display: block;
+    font-size: 24px;
+    font-weight: 700;
+    font-family: var(--font-mono);
+    margin-bottom: var(--spacing-xs);
+}
+
+.index-change {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+    padding: var(--spacing-xs) var(--spacing-sm);
+    border-radius: 4px;
+    display: inline-block;
+}
+
+.index-change.up {
+    background: rgba(16, 185, 129, 0.1);
+}
+
+.index-change.down {
+    background: rgba(239, 68, 68, 0.1);
+}
+
+/* 涨跌家数 */
+.advance-decline {
+    grid-column: 1 / 3;
+}
+
+.ad-chart {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+}
+
+.ad-bar {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+}
+
+.ad-label {
+    width: 50px;
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+.ad-progress {
+    flex: 1;
+    height: 24px;
+    background: var(--bg-secondary);
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.ad-fill {
+    height: 100%;
+    border-radius: 12px;
+    transition: width 1s ease;
+}
+
+.ad-fill.up {
+    background: linear-gradient(90deg, var(--color-up), #34d399);
+}
+
+.ad-fill.down {
+    background: linear-gradient(90deg, var(--color-down), #f87171);
+}
+
+.ad-fill.neutral {
+    background: var(--color-neutral);
+}
+
+.ad-value {
+    width: 60px;
+    text-align: right;
+    font-family: var(--font-mono);
+    font-weight: 600;
+}
+
+/* 涨跌停比 */
+.limit-up-down {
+    grid-column: 3 / 4;
+}
+
+.limit-stats {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-lg);
+    align-items: center;
+    padding: var(--spacing-md) 0;
+}
+
+.limit-item {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    padding: 0 var(--spacing-lg);
+}
+
+.limit-label {
+    font-size: 14px;
+    color: var(--text-secondary);
+}
+
+.limit-value {
+    font-size: 24px;
+    font-weight: 700;
+    font-family: var(--font-mono);
+}
+
+.limit-ratio {
+    text-align: center;
+    padding: var(--spacing-md);
+    background: var(--bg-secondary);
+    border-radius: var(--border-radius);
+    width: 100%;
+}
+
+.ratio-value {
+    display: block;
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--accent-gold);
+    font-family: var(--font-mono);
+}
+
+.ratio-label {
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+/* 资金流向 */
+.capital-flow {
+    grid-column: 4 / 5;
+}
+
+#capitalFlowChart {
+    height: 200px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-muted);
+}
+
+/* 板块热度 */
+.sector-heatmap {
+    grid-column: 1 / 3;
+}
+
+.sector-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--spacing-sm);
+}
+
+.sector-item {
+    padding: var(--spacing-sm);
+    border-radius: var(--border-radius);
+    text-align: center;
+    font-size: 12px;
+    transition: all var(--transition-fast);
+    cursor: pointer;
+}
+
+.sector-item:hover {
+    transform: scale(1.05);
+}
+
+.sector-name {
+    display: block;
+    font-weight: 500;
+    margin-bottom: 2px;
+}
+
+.sector-change {
+    font-family: var(--font-mono);
+    font-size: 11px;
+}
+
+/* 市场情绪 */
+.sentiment {
+    grid-column: 3 / 5;
+}
+
+.sentiment-gauge {
+    display: flex;
+    justify-content: center;
+    padding: var(--spacing-lg);
+}
+
+.gauge-container {
+    position: relative;
+    width: 200px;
+    height: 120px;
+}
+
+.gauge-bg {
+    position: absolute;
+    width: 200px;
+    height: 100px;
+    border-radius: 100px 100px 0 0;
+    background: conic-gradient(
+        from 180deg at 50% 100%,
+        var(--color-down) 0deg,
+        var(--color-neutral) 60deg,
+        var(--color-up) 120deg,
+        var(--color-up) 180deg
+    );
+    opacity: 0.2;
+}
+
+.gauge-fill {
+    position: absolute;
+    width: 200px;
+    height: 100px;
+    border-radius: 100px 100px 0 0;
+    background: conic-gradient(
+        from 180deg at 50% 100%,
+        var(--color-down) 0deg,
+        var(--color-neutral) 60deg,
+        var(--color-up) 120deg,
+        var(--color-up) 180deg
+    );
+    clip-path: polygon(
+        50% 100%,
+        50% 0%,
+        calc(50% + 50% * sin(calc(var(--value) * 1.8deg))) calc(100% - 100% * cos(calc(var(--value) * 1.8deg)))
+    );
+    transition: clip-path 1s ease;
+}
+
+.gauge-text {
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    text-align: center;
+}
+
+.gauge-score {
+    display: block;
+    font-size: 36px;
+    font-weight: 700;
+    font-family: var(--font-mono);
+    color: var(--accent-gold);
+}
+
+.gauge-label {
+    font-size: 14px;
+    color: var(--text-secondary);
+}
+
+/* 响应式 */
+@media (max-width: 1200px) {
+    .dashboard-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .market-overview,
+    .advance-decline,
+    .limit-up-down,
+    .capital-flow,
+    .sector-heatmap,
+    .sentiment {
+        grid-column: auto;
+    }
+    
+    .index-cards {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .dashboard-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .index-cards {
+        grid-template-columns: 1fr;
+    }
+    
+    .sector-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}

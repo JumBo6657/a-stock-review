@@ -1,0 +1,348 @@
+/* ============================================
+   模式选股页面样式
+   ============================================ */
+
+.patterns-header {
+    margin-bottom: var(--spacing-lg);
+}
+
+.pattern-tabs {
+    display: flex;
+    gap: var(--spacing-xs);
+    background: var(--bg-secondary);
+    padding: var(--spacing-xs);
+    border-radius: var(--border-radius);
+    overflow-x: auto;
+}
+
+.pattern-tab {
+    padding: var(--spacing-sm) var(--spacing-lg);
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    border-radius: 6px;
+    transition: all var(--transition-fast);
+    white-space: nowrap;
+    font-family: var(--font-sans);
+}
+
+.pattern-tab:hover {
+    color: var(--text-primary);
+    background: var(--bg-hover);
+}
+
+.pattern-tab.active {
+    background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+    color: white;
+}
+
+/* 模式内容区 */
+.pattern-content {
+    display: none;
+}
+
+.pattern-content.active {
+    display: block;
+}
+
+/* 选股配置 */
+.pattern-config {
+    background: var(--bg-card);
+    border-radius: var(--border-radius);
+    padding: var(--spacing-lg);
+    margin-bottom: var(--spacing-lg);
+    border: 1px solid var(--border-color);
+}
+
+.pattern-config h4 {
+    font-size: 16px;
+    margin-bottom: var(--spacing-md);
+    color: var(--text-primary);
+}
+
+.config-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-lg);
+}
+
+.config-item {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+}
+
+.config-item label {
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+.config-item input[type="number"],
+.config-item select {
+    width: 100%;
+}
+
+.config-item input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--accent-primary);
+}
+
+/* 结果表格 */
+.pattern-results {
+    background: var(--bg-card);
+    border-radius: var(--border-radius);
+    border: 1px solid var(--border-color);
+    overflow: hidden;
+}
+
+/* 断板反包特殊样式 */
+.rebound-pools {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-lg);
+}
+
+.pool-section {
+    background: var(--bg-card);
+    border-radius: var(--border-radius);
+    padding: var(--spacing-lg);
+    border: 1px solid var(--border-color);
+}
+
+.pool-section h4 {
+    font-size: 16px;
+    margin-bottom: var(--spacing-md);
+    color: var(--text-primary);
+}
+
+.pool-actions {
+    display: flex;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-md);
+    flex-wrap: wrap;
+}
+
+.pool-actions input {
+    flex: 1;
+    min-width: 150px;
+}
+
+/* 分数显示 */
+.score-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    font-weight: 700;
+    font-size: 13px;
+    font-family: var(--font-mono);
+}
+
+.score-high {
+    background: rgba(16, 185, 129, 0.2);
+    color: var(--color-up);
+}
+
+.score-medium {
+    background: rgba(245, 158, 11, 0.2);
+    color: var(--accent-gold);
+}
+
+.score-low {
+    background: rgba(239, 68, 68, 0.2);
+    color: var(--color-down);
+}
+
+/* 加分项标签 */
+.bonus-tags {
+    display: flex;
+    gap: var(--spacing-xs);
+    flex-wrap: wrap;
+}
+
+.bonus-tag {
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    background: rgba(59, 130, 246, 0.15);
+    color: var(--accent-primary);
+    border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+/* 龙回头 */
+.dragon-pool {
+    background: var(--bg-card);
+    border-radius: var(--border-radius);
+    padding: var(--spacing-lg);
+    border: 1px solid var(--border-color);
+}
+
+.dragon-pool h4 {
+    font-size: 16px;
+    margin-bottom: var(--spacing-md);
+    color: var(--text-primary);
+}
+
+/* 状态标签 */
+.status-badge {
+    padding: 2px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.status-watching {
+    background: rgba(59, 130, 246, 0.15);
+    color: var(--accent-primary);
+}
+
+.status-falling {
+    background: rgba(245, 158, 11, 0.15);
+    color: var(--accent-gold);
+}
+
+.status-ready {
+    background: rgba(16, 185, 129, 0.15);
+    color: var(--color-up);
+}
+
+.status-done {
+    background: rgba(107, 114, 128, 0.15);
+    color: var(--text-muted);
+}
+
+/* 主升踏浪 */
+.momentum-rank {
+    background: var(--bg-card);
+    border-radius: var(--border-radius);
+    padding: var(--spacing-lg);
+    border: 1px solid var(--border-color);
+}
+
+.momentum-rank h4 {
+    font-size: 16px;
+    margin-bottom: var(--spacing-md);
+    color: var(--text-primary);
+}
+
+.rank-filters {
+    display: flex;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-lg);
+}
+
+/* 博主跟踪 */
+.blogger-section,
+.blogger-stocks {
+    background: var(--bg-card);
+    border-radius: var(--border-radius);
+    padding: var(--spacing-lg);
+    border: 1px solid var(--border-color);
+    margin-bottom: var(--spacing-lg);
+}
+
+.blogger-section h4,
+.blogger-stocks h4 {
+    font-size: 16px;
+    margin-bottom: var(--spacing-md);
+    color: var(--text-primary);
+}
+
+.blogger-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: var(--spacing-md);
+}
+
+.blogger-card {
+    background: var(--bg-secondary);
+    border-radius: var(--border-radius);
+    padding: var(--spacing-md);
+    border: 1px solid var(--border-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.blogger-info {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+}
+
+.blogger-name {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.blogger-platform {
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+.blogger-actions {
+    display: flex;
+    gap: var(--spacing-xs);
+}
+
+.btn-small {
+    padding: var(--spacing-xs) var(--spacing-sm);
+    font-size: 12px;
+}
+
+/* 启动状态 */
+.launch-status {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    padding: 2px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.launch-status.not-started {
+    background: rgba(107, 114, 128, 0.15);
+    color: var(--text-muted);
+}
+
+.launch-status.launched {
+    background: rgba(16, 185, 129, 0.15);
+    color: var(--color-up);
+}
+
+.launch-status::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+}
+
+/* 响应式 */
+@media (max-width: 768px) {
+    .pattern-tabs {
+        flex-wrap: nowrap;
+        overflow-x: scroll;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    .pool-actions {
+        flex-direction: column;
+    }
+    
+    .pool-actions input {
+        width: 100%;
+    }
+    
+    .config-grid {
+        grid-template-columns: 1fr;
+    }
+}
