@@ -1,398 +1,256 @@
 /**
- * 行情中心模块 - 东方财富API真实K线数据
+ * 行情中心模块 - 东方财富API真实K线（JSONP方式）
  */
 
-let chartInstance = null;
-let currentChartType = 'kline';
+window.chartInstance = null;
+var currentChartType = 'kline';
+var stockInfoCache = {};
 
-// 自选股缓存
-const stockInfoCache = {};
+// JSONP封装（与dashboard.js共享，但这里独立定义以防加载顺序问题）
+if (typeof window._jsonp === 'undefined') {
+    window._jsonp = function(url, timeoutMs) {
+        timeoutMs = timeoutMs || 10000;
+        return new Promise(function(resolve, reject) {
+            var cbName = '_jpcb_' + Math.random().toString(36).slice(2) + '_' + Date.now();
+            var script = document.createElement('script');
+            var timer = setTimeout(function() { cleanup(); reject(new Error('timeout')); }, timeoutMs);
+            function cleanup() {
+                clearTimeout(timer);
+                delete window[cbName];
+                if (script.parentNode) script.parentNode.removeChild(script);
+            }
+            window[cbName] = function(data) { cleanup(); resolve(data); };
+            script.src = url + (url.indexOf('?') >= 0 ? '&' : '?') + 'cb=' + cbName;
+            script.onerror = function() { cleanup(); reject(new Error('failed')); };
+            document.head.appendChild(script);
+        });
+    };
+}
 
 function initCharts() {
     initChartTabs();
     initStockSearch();
-
-    // 默认加载上证指数
-    loadChart('000001');
+    window.loadChart('000001');
 }
 
 function initChartTabs() {
-    const tabs = document.querySelectorAll('.chart-tab');
-    tabs.forEach(tab => {
-        tab.addEventListener('click', () => {
-            const chartType = tab.dataset.chart;
-            currentChartType = chartType;
-
-            tabs.forEach(t => t.classList.remove('active'));
-            tab.classList.add('active');
-
-            const searchInput = document.getElementById('stockSearch');
-            const code = searchInput?.value || '000001';
-            loadChart(code);
+    var tabs = document.querySelectorAll('.chart-tab');
+    for (var i = 0; i < tabs.length; i++) {
+        tabs[i].addEventListener('click', function() {
+            currentChartType = this.dataset.chart;
+            for (var j = 0; j < tabs.length; j++) tabs[j].classList.remove('active');
+            this.classList.add('active');
+            var searchInput = document.getElementById('stockSearch');
+            window.loadChart(searchInput ? searchInput.value : '000001');
         });
-    });
+    }
 }
 
 function initStockSearch() {
-    const searchInput = document.getElementById('stockSearch');
-    const loadBtn = document.getElementById('loadChart');
-
+    var searchInput = document.getElementById('stockSearch');
+    var loadBtn = document.getElementById('loadChart');
     if (loadBtn) {
-        loadBtn.addEventListener('click', () => {
-            const code = searchInput.value.trim();
-            if (code) loadChart(code);
+        loadBtn.addEventListener('click', function() {
+            window.loadChart(searchInput.value.trim() || '000001');
         });
     }
-
     if (searchInput) {
-        searchInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                const code = searchInput.value.trim();
-                if (code) loadChart(code);
-            }
+        searchInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') window.loadChart(searchInput.value.trim() || '000001');
         });
     }
 }
 
-// 根据代码判断交易所
+// 判断交易所
 function getMarketCode(code) {
     code = String(code).trim();
-    if (code.length < 6) code = code.padStart(6, '0');
-
-    const firstChar = code[0];
-    // 深市: 0开头或3开头(创业板)
-    if (firstChar === '0' || firstChar === '3') {
-        return '0.' + code;
-    }
-    // 沪市: 6开头或科创688
+    if (code.length < 6) code = ('000000' + code).slice(-6);
+    var first = code[0];
+    if (first === '0' || first === '3') return '0.' + code;
     return '1.' + code;
 }
 
-// 获取股票名称
-async function fetchStockName(code) {
-    const cacheKey = getMarketCode(code);
-    if (stockInfoCache[cacheKey]) return stockInfoCache[cacheKey];
-
-    const url = 'https://push2.eastmoney.com/api/qt/stock/get?secid=' + cacheKey + '&fields=f57,f58';
-    try {
-        const r = await fetch(url);
-        const data = await r.json();
-        if (data && data.data) {
-            stockInfoCache[cacheKey] = data.data.f58 || code;
-            return data.data.f58 || code;
-        }
-    } catch (e) {
-        console.error('获取股票名称失败:', e);
-    }
-    return code;
-}
-
 // 获取K线数据
-async function fetchKLineData(code, period = 'day', limit = 200) {
-    const secid = getMarketCode(code);
-
-    // klt: 101=日线, 102=周线, 103=月线, 60=60分钟, 30=30分钟, 15=15分钟, 5=5分钟, 1=1分钟
-    const kltMap = { day: 101, week: 102, month: 103, m60: 60, m30: 30, m15: 15, m5: 5, m1: 1 };
-    const klt = kltMap[period] || 101;
-
-    const url = 'https://push2his.eastmoney.com/api/qt/stock/kline/get' +
+function fetchKLineData(code, limit) {
+    limit = limit || 200;
+    var secid = getMarketCode(code);
+    var url = 'https://push2his.eastmoney.com/api/qt/stock/kline/get' +
         '?secid=' + secid +
         '&fields1=f1,f2,f3,f4,f5,f6' +
         '&fields2=f51,f52,f53,f54,f55,f56,f57,f58,f59,f60,f61' +
-        '&klt=' + klt +
-        '&fqt=0' +
-        '&end=20500101' +
-        '&lmt=' + limit;
-
-    try {
-        const r = await fetch(url);
-        const data = await r.json();
+        '&klt=101&fqt=0&end=20500101&lmt=' + limit;
+    return window._jsonp(url).then(function(data) {
         if (data && data.data && data.data.klines) {
-            return data.data.klines.map(line => {
-                const parts = line.split(',');
-                // f51=日期, f52=开盘, f53=收盘, f54=最高, f55=最低, f56=成交量, f57=成交额, f58=振幅, f59=涨跌幅, f60=涨跌额, f61=换手率
-                return {
-                    time: parts[0],
-                    open: parseFloat(parts[1]),
-                    close: parseFloat(parts[2]),
-                    high: parseFloat(parts[3]),
-                    low: parseFloat(parts[4]),
-                    volume: parseFloat(parts[5]),
-                    amount: parseFloat(parts[6]),
-                    amplitude: parseFloat(parts[7]),
-                    changePct: parseFloat(parts[8]),
-                    change: parseFloat(parts[9]),
-                    turnover: parseFloat(parts[10])
-                };
-            });
+            var name = (data.data.name || code);
+            stockInfoCache[secid] = name;
+            return {
+                name: name,
+                klines: data.data.klines.map(function(line) {
+                    var p = line.split(',');
+                    return {
+                        time: p[0], open: parseFloat(p[1]), close: parseFloat(p[2]),
+                        high: parseFloat(p[3]), low: parseFloat(p[4]), volume: parseFloat(p[5]),
+                        amount: parseFloat(p[6]), amplitude: parseFloat(p[7]),
+                        changePct: parseFloat(p[8]), change: parseFloat(p[9]), turnover: parseFloat(p[10])
+                    };
+                })
+            };
         }
-    } catch (e) {
-        console.error('获取K线数据失败:', e);
-    }
-    return null;
+        return null;
+    });
 }
 
 // 获取分时数据
-async function fetchMinuteData(code) {
-    const secid = getMarketCode(code);
-    // 1分钟K线作为分时数据源
-    const url = 'https://push2his.eastmoney.com/api/qt/stock/kline/get' +
+function fetchMinuteData(code) {
+    var secid = getMarketCode(code);
+    var url = 'https://push2his.eastmoney.com/api/qt/stock/kline/get' +
         '?secid=' + secid +
         '&fields1=f1,f2,f3,f4,f5,f6' +
         '&fields2=f51,f52,f53,f54,f55,f56' +
-        '&klt=1' +
-        '&fqt=0' +
-        '&end=20500101' +
-        '&lmt=240';
-
-    try {
-        const r = await fetch(url);
-        const data = await r.json();
+        '&klt=1&fqt=0&end=20500101&lmt=240';
+    return window._jsonp(url).then(function(data) {
         if (data && data.data && data.data.klines && data.data.klines.length > 0) {
-            return data.data.klines.map(line => {
-                const parts = line.split(',');
-                const dt = parts[0];  // 格式: 2026-06-03 09:30
-                const dateTime = new Date(dt);
-                return {
-                    time: Math.floor(dateTime.getTime() / 1000),
-                    value: parseFloat(parts[2])  // 收盘价
-                };
+            stockInfoCache[secid] = data.data.name || code;
+            return data.data.klines.map(function(line) {
+                var p = line.split(',');
+                return { time: Math.floor(new Date(p[0]).getTime() / 1000), value: parseFloat(p[2]) };
             });
         }
-    } catch (e) {
-        console.error('获取分时数据失败:', e);
-    }
-    return null;
+        return null;
+    });
 }
 
 // ============================================
-// 主加载函数
+// 主加载
 // ============================================
-async function loadChart(code) {
-    const container = document.getElementById('chartArea');
+window.loadChart = function(code) {
+    var container = document.getElementById('chartArea');
     if (!container) return;
-
-    const searchInput = document.getElementById('stockSearch');
+    var searchInput = document.getElementById('stockSearch');
     if (searchInput) searchInput.value = code;
 
-    // 显示加载状态
     container.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-muted);font-size:14px;">⏳ 加载行情数据...</div>';
 
-    try {
-        const name = await fetchStockName(code);
-        const stock = { code, name, price: 0 };
+    var secid = getMarketCode(code);
 
-        if (currentChartType === 'kline') {
-            const klineData = await fetchKLineData(code, 'day', 200);
-            if (klineData && klineData.length > 0) {
-                stock.price = klineData[klineData.length - 1].close;
-                renderKLineChart(container, stock, klineData);
+    if (currentChartType === 'kline') {
+        fetchKLineData(code, 200).then(function(result) {
+            if (result && result.klines.length > 0) {
+                renderKLineChart(container, result.name || code, result.klines);
             } else {
-                container.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-muted);font-size:14px;">❌ 无法获取K线数据，请检查股票代码</div>';
+                container.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-muted);">❌ 无法获取数据，请检查股票代码</div>';
             }
-        } else {
-            const minuteData = await fetchMinuteData(code);
-            if (minuteData && minuteData.length > 0) {
-                stock.price = minuteData[minuteData.length - 1].value;
-                renderTimeSeriesChart(container, stock, minuteData);
+        }).catch(function(e) {
+            console.error(e);
+            container.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--color-down);">❌ 网络异常，请稍后重试</div>';
+        });
+    } else {
+        fetchMinuteData(code).then(function(data) {
+            if (data && data.length > 0) {
+                renderTimeSeriesChart(container, stockInfoCache[secid] || code, data);
             } else {
-                container.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-muted);font-size:14px;">❌ 未获取到分时数据（可能已收盘）</div>';
+                container.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-muted);">❌ 分时数据不可用（可能已收盘）</div>';
             }
-        }
-    } catch (e) {
-        console.error('加载图表失败:', e);
-        container.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--color-down);font-size:14px;">❌ 加载失败: 网络异常或股票代码无效</div>';
+        }).catch(function() {
+            container.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--color-down);">❌ 网络异常</div>';
+        });
     }
-}
+};
 
 // ============================================
-// K线图渲染（使用真实数据）
+// K线图
 // ============================================
-function renderKLineChart(container, stock, rawData) {
+function renderKLineChart(container, name, rawData) {
     container.innerHTML = '';
-
-    // 转换数据格式
-    const candlestickData = rawData.map(d => ({
-        time: d.time,
-        open: d.open,
-        high: d.high,
-        low: d.low,
-        close: d.close
-    }));
-
-    const volumeData = rawData.map(d => {
-        const color = d.close >= d.open
-            ? 'rgba(16,185,129,0.5)'
-            : 'rgba(239,68,68,0.5)';
-        return { time: d.time, value: d.volume, color };
+    var candlestickData = rawData.map(function(d) {
+        return { time: d.time, open: d.open, high: d.high, low: d.low, close: d.close };
+    });
+    var volumeData = rawData.map(function(d) {
+        return { time: d.time, value: d.volume, color: d.close >= d.open ? 'rgba(16,185,129,0.5)' : 'rgba(239,68,68,0.5)' };
     });
 
-    const chart = LightweightCharts.createChart(container, {
-        width: container.clientWidth,
-        height: container.clientHeight,
-        layout: {
-            background: { color: '#1a1f2e' },
-            textColor: '#9ca3af',
-        },
-        grid: {
-            vertLines: { color: '#2d3748' },
-            horzLines: { color: '#2d3748' },
-        },
-        crosshair: {
-            mode: LightweightCharts.CrosshairMode.Normal,
-        },
-        rightPriceScale: {
-            borderColor: '#2d3748',
-            scaleMargins: { top: 0.05, bottom: 0.25 },
-        },
-        timeScale: {
-            borderColor: '#2d3748',
-            timeVisible: true,
-            secondsVisible: false,
-        },
+    var chart = LightweightCharts.createChart(container, {
+        width: container.clientWidth, height: container.clientHeight,
+        layout: { background: { color: '#1a1f2e' }, textColor: '#9ca3af' },
+        grid: { vertLines: { color: '#2d3748' }, horzLines: { color: '#2d3748' } },
+        crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
+        rightPriceScale: { borderColor: '#2d3748', scaleMargins: { top: 0.05, bottom: 0.25 } },
+        timeScale: { borderColor: '#2d3748', timeVisible: true }
     });
 
-    // K线
-    const candlestickSeries = chart.addCandlestickSeries({
-        upColor: '#10b981',
-        downColor: '#ef4444',
-        borderUpColor: '#10b981',
-        borderDownColor: '#ef4444',
-        wickUpColor: '#10b981',
-        wickDownColor: '#ef4444',
+    var cs = chart.addCandlestickSeries({
+        upColor: '#10b981', downColor: '#ef4444',
+        borderUpColor: '#10b981', borderDownColor: '#ef4444',
+        wickUpColor: '#10b981', wickDownColor: '#ef4444'
     });
-    candlestickSeries.setData(candlestickData);
+    cs.setData(candlestickData);
 
-    // 成交量
-    const volumeSeries = chart.addHistogramSeries({
-        priceFormat: { type: 'volume' },
-        priceScaleId: '',
-        scaleMargins: { top: 0.78, bottom: 0 },
-    });
-    volumeSeries.setData(volumeData);
+    var vs = chart.addHistogramSeries({ priceFormat: { type: 'volume' }, priceScaleId: '', scaleMargins: { top: 0.78, bottom: 0 } });
+    vs.setData(volumeData);
 
-    // MA5
-    const ma5Data = calculateMA(candlestickData, 5);
-    if (ma5Data.length > 0) {
-        const ma5 = chart.addLineSeries({ color: '#f59e0b', lineWidth: 1, title: 'MA5' });
-        ma5.setData(ma5Data);
-    }
-
-    // MA10
-    const ma10Data = calculateMA(candlestickData, 10);
-    if (ma10Data.length > 0) {
-        const ma10 = chart.addLineSeries({ color: '#3b82f6', lineWidth: 1, title: 'MA10' });
-        ma10.setData(ma10Data);
-    }
-
-    // MA20
-    const ma20Data = calculateMA(candlestickData, 20);
-    if (ma20Data.length > 0) {
-        const ma20 = chart.addLineSeries({ color: '#f59e0b', lineWidth: 1.5, title: 'MA20' });
-        ma20.setData(ma20Data);
-    }
-
-    // MA60
-    if (candlestickData.length >= 60) {
-        const ma60Data = calculateMA(candlestickData, 60);
-        const ma60 = chart.addLineSeries({ color: '#8b5cf6', lineWidth: 1, title: 'MA60' });
-        ma60.setData(ma60Data);
+    // MA均线
+    var mas = [5, 10, 20, 60];
+    var colors = ['#f59e0b', '#3b82f6', '#f59e0b', '#8b5cf6'];
+    var widths = [1, 1, 1.5, 1];
+    for (var m = 0; m < mas.length; m++) {
+        var ma = calcMA(candlestickData, mas[m]);
+        if (ma.length > 0) {
+            var ls = chart.addLineSeries({ color: colors[m], lineWidth: widths[m], title: 'MA' + mas[m] });
+            ls.setData(ma);
+        }
     }
 
     chart.timeScale().fitContent();
-
-    // 响应式
-    const handleResize = () => {
-        chart.applyOptions({
-            width: container.clientWidth,
-            height: container.clientHeight,
-        });
-    };
-    window.addEventListener('resize', handleResize);
-
-    chartInstance = chart;
+    var onResize = function() { chart.applyOptions({ width: container.clientWidth, height: container.clientHeight }); };
+    window.addEventListener('resize', onResize);
+    window.chartInstance = chart;
 }
 
 // ============================================
-// 分时图渲染
+// 分时图
 // ============================================
-function renderTimeSeriesChart(container, stock, data) {
+function renderTimeSeriesChart(container, name, data) {
     container.innerHTML = '';
+    var firstPrice = data[0].value;
+    var lastPrice = data[data.length - 1].value;
+    var isUp = lastPrice >= firstPrice;
+    var lc = isUp ? '#ef4444' : '#10b981';
+    var tc = (isUp ? 'rgba(239,68,68,' : 'rgba(16,185,129,') + '0.35)';
+    var bc = (isUp ? 'rgba(239,68,68,' : 'rgba(16,185,129,') + '0.05)';
 
-    const chart = LightweightCharts.createChart(container, {
-        width: container.clientWidth,
-        height: container.clientHeight,
-        layout: {
-            background: { color: '#1a1f2e' },
-            textColor: '#9ca3af',
-        },
-        grid: {
-            vertLines: { color: '#2d3748' },
-            horzLines: { color: '#2d3748' },
-        },
-        rightPriceScale: {
-            borderColor: '#2d3748',
-        },
-        timeScale: {
-            borderColor: '#2d3748',
-            timeVisible: true,
-            secondsVisible: false,
-        },
+    var chart = LightweightCharts.createChart(container, {
+        width: container.clientWidth, height: container.clientHeight,
+        layout: { background: { color: '#1a1f2e' }, textColor: '#9ca3af' },
+        grid: { vertLines: { color: '#2d3748' }, horzLines: { color: '#2d3748' } },
+        rightPriceScale: { borderColor: '#2d3748' },
+        timeScale: { borderColor: '#2d3748', timeVisible: true }
     });
 
-    // 判断涨跌颜色
-    const firstPrice = data[0]?.value || 0;
-    const lastPrice = data[data.length - 1]?.value || 0;
-    const isUp = lastPrice >= firstPrice;
-    const lineColor = isUp ? '#ef4444' : '#10b981';
-    const topColor = (isUp ? 'rgba(239,68,68,' : 'rgba(16,185,129,') + '0.35)';
-    const bottomColor = (isUp ? 'rgba(239,68,68,' : 'rgba(16,185,129,') + '0.05)';
+    var as = chart.addAreaSeries({ topColor: tc, bottomColor: bc, lineColor: lc, lineWidth: 2 });
+    as.setData(data);
 
-    const areaSeries = chart.addAreaSeries({
-        topColor, bottomColor, lineColor, lineWidth: 2,
-    });
-    areaSeries.setData(data);
-
-    // 均价线
     if (data.length > 1) {
-        const sum = data.reduce((s, d) => s + d.value, 0);
-        const avg = sum / data.length;
-        const avgData = [
-            { time: data[0].time, value: avg },
-            { time: data[data.length - 1].time, value: avg }
-        ];
-        const avgSeries = chart.addLineSeries({ color: '#f59e0b', lineWidth: 1, lineStyle: 2, title: '均价' });
-        avgSeries.setData(avgData);
+        var avg = data.reduce(function(s, d) { return s + d.value; }, 0) / data.length;
+        var avgs = chart.addLineSeries({ color: '#f59e0b', lineWidth: 1, lineStyle: 2, title: '均价' });
+        avgs.setData([{ time: data[0].time, value: avg }, { time: data[data.length - 1].time, value: avg }]);
     }
 
     chart.timeScale().fitContent();
-
-    const handleResize = () => {
-        chart.applyOptions({
-            width: container.clientWidth,
-            height: container.clientHeight,
-        });
-    };
-    window.addEventListener('resize', handleResize);
-
-    chartInstance = chart;
+    var onResize = function() { chart.applyOptions({ width: container.clientWidth, height: container.clientHeight }); };
+    window.addEventListener('resize', onResize);
+    window.chartInstance = chart;
 }
 
-// ============================================
-// 工具函数
-// ============================================
-function calculateMA(data, period) {
+function calcMA(data, period) {
     if (data.length < period) return [];
-    const maData = [];
-    for (let i = period - 1; i < data.length; i++) {
-        let sum = 0;
-        for (let j = 0; j < period; j++) {
-            sum += data[i - j].close;
-        }
-        maData.push({
-            time: data[i].time,
-            value: parseFloat((sum / period).toFixed(2)),
-        });
+    var result = [];
+    for (var i = period - 1; i < data.length; i++) {
+        var sum = 0;
+        for (var j = 0; j < period; j++) sum += data[i - j].close;
+        result.push({ time: data[i].time, value: parseFloat((sum / period).toFixed(2)) });
     }
-    return maData;
+    return result;
 }
+
+// 映射全局
+window.loadChart = window.loadChart;
