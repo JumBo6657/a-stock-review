@@ -4,7 +4,6 @@
 
 function initDashboard() {
     refreshDashboard();
-    // 姣?鍒嗛挓鑷姩鍒锋柊
     setInterval(refreshDashboard, 300000);
 }
 
@@ -13,7 +12,6 @@ async function refreshDashboard() {
     if (btn) { btn.disabled = true; btn.textContent = '...'; }
 
     try {
-        // 骞惰璇诲彇鏈湴JSON鏂囦欢锛堝悓婧愶紝鏃燙ORS闂锛?
         var results = await Promise.all([
             fetch('data/indices.json?' + Date.now()).then(r => r.json()),
             fetch('data/sectors.json?' + Date.now()).then(r => r.json()),
@@ -34,7 +32,6 @@ async function refreshDashboard() {
         renderTopList('topLosers', market.topLosers);
         updateSentiment(market.upCount, market.downCount);
 
-        // 鏇存柊鏃堕棿
         var statusText = document.querySelector('.status-text');
         if (statusText) statusText.textContent = updated;
 
@@ -44,10 +41,6 @@ async function refreshDashboard() {
         if (btn) { btn.disabled = false; btn.textContent = '鍒锋柊'; }
     }
 }
-
-// ============================================
-// 娓叉煋鍑芥暟
-// ============================================
 
 function renderIndexCards(data) {
     if (!data || !data.length) return;
@@ -132,7 +125,7 @@ function renderTopList(containerId, items) {
         var pct = item.changePct || 0;
         var cls = pct >= 0 ? 'up' : 'down';
         var sign = pct >= 0 ? '+' : '';
-        return '<div class="top-list-item" onclick="loadChart(\'' + item.code + '\');switchPage(\'charts\');">' +
+        return '<div class="top-list-item" onclick="loadChart(' + "'" + item.code + "'" + ');switchPage(' + "'charts'" + ');">' +
             '<span class="top-list-code">' + item.code + '</span>' +
             '<span class="top-list-name">' + item.name + '</span>' +
             '<span class="top-list-pct ' + cls + '">' + sign + pct.toFixed(2) + '%</span></div>';

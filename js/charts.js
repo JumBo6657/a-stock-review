@@ -30,9 +30,6 @@ function initStockSearch() {
     if (inp) inp.addEventListener('keypress', function(e) { if (e.key === 'Enter') loadChart(inp.value.trim() || '000001'); });
 }
 
-// ============================================
-// 涓诲姞杞?
-// ============================================
 function loadChart(code) {
     var container = document.getElementById('chartArea');
     if (!container) return;
@@ -41,7 +38,6 @@ function loadChart(code) {
 
     container.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-muted);font-size:14px;">Loading...</div>';
 
-    // 灏濊瘯鍔犺浇棰勭疆鐨凨绾挎枃浠?
     var url = 'data/kline_' + code + '.json?' + Date.now();
     fetch(url).then(function(r) {
         if (!r.ok) throw new Error('no preload');
@@ -57,7 +53,6 @@ function loadChart(code) {
             showError(container, '鏃犳暟鎹?);
         }
     }).catch(function() {
-        // 灏濊瘯閫氳繃JSONP瀹炴椂鑾峰彇
         tryJSONP(code, container);
     });
 }
@@ -119,9 +114,6 @@ function showError(container, msg) {
     container.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-muted);">' + msg + '锛岃妫€鏌ヨ偂绁ㄤ唬鐮?/div>';
 }
 
-// ============================================
-// K绾垮浘
-// ============================================
 function renderKLineChart(container, name, rawData) {
     container.innerHTML = '';
 
@@ -167,13 +159,9 @@ function renderKLineChart(container, name, rawData) {
     window.addEventListener('resize', onResize);
 }
 
-// ============================================
-// 鍒嗘椂鍥撅紙鐢ㄦ棩绾挎暟鎹繎浼硷級
-// ============================================
 function renderMinuteChart(container, name, klines) {
     container.innerHTML = '';
 
-    // 鐢ㄦ渶杩戜竴澶╃殑K绾挎暟鎹繎浼煎垎鏃?
     var last = klines[klines.length - 1];
     if (!last) return showError(container, '鏃犳暟鎹?);
 
