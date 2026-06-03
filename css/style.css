@@ -435,6 +435,53 @@ body {
     color: var(--accent-secondary);
 }
 
+/* 涨跌榜 */
+.top-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    max-height: 260px;
+    overflow-y: auto;
+}
+
+.top-list-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 10px;
+    border-radius: 4px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: background var(--transition-fast);
+}
+
+.top-list-item:hover {
+    background: var(--bg-hover);
+}
+
+.top-list-name {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--text-secondary);
+}
+
+.top-list-code {
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    margin-right: 8px;
+    width: 52px;
+}
+
+.top-list-pct {
+    font-family: var(--font-mono);
+    font-weight: 600;
+    width: 60px;
+    text-align: right;
+}
+
 @media (max-width: 768px) {
     .trade-stats {
         grid-template-columns: repeat(2, 1fr);
