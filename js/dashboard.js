@@ -1,5 +1,5 @@
 /**
- * 澶х洏鎯呯华妯″潡 - 璇诲彇鏈湴鏁版嵁JSON锛堟棤CORS闄愬埗锛?
+ * 大盘情绪模块 - 读取本地数据JSON（无CORS限制）
  */
 
 function initDashboard() {
@@ -36,9 +36,9 @@ async function refreshDashboard() {
         if (statusText) statusText.textContent = updated;
 
     } catch (e) {
-        console.error('鍔犺浇鏁版嵁澶辫触:', e);
+        console.error('加载数据失败:', e);
     } finally {
-        if (btn) { btn.disabled = false; btn.textContent = '鍒锋柊'; }
+        if (btn) { btn.disabled = false; btn.textContent = '刷新'; }
     }
 }
 
@@ -114,7 +114,7 @@ function updateSentiment(upCount, downCount) {
     var scoreEl = document.querySelector('.gauge-score');
     var labelEl = document.querySelector('.gauge-label');
     if (scoreEl) scoreEl.textContent = score;
-    var label = score >= 80 ? '鏋佸害涔愯' : score >= 65 ? '鍋忎箰瑙? : score >= 45 ? '涓€? : score >= 25 ? '鍋忔偛瑙? : '鏋佸害鎮茶';
+    var label = score >= 80 ? '极度乐观' : score >= 65 ? '偏乐观' : score >= 45 ? '中性' : score >= 25 ? '偏悲观' : '极度悲观';
     if (labelEl) labelEl.textContent = label;
 }
 
