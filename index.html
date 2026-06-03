@@ -411,12 +411,13 @@
             <div class="page" id="trades">
                 <div class="trades-header">
                     <div class="upload-section">
-                        <input type="file" id="tradeFile" accept=".csv,.xlsx" hidden>
+                        <input type="file" id="tradeFile" accept=".csv,.txt" hidden>
                         <button class="btn btn-outline" onclick="document.getElementById('tradeFile').click()">
-                            📁 选择文件
+                            📁 选择CSV
                         </button>
                         <span class="file-name" id="fileName">未选择文件</span>
                         <button class="btn btn-primary" id="importTrade">导入</button>
+                        <button class="btn btn-outline" onclick="loadSampleTrades()">📋 加载示例</button>
                     </div>
                     <div class="trade-stats">
                         <div class="stat-card">
@@ -431,7 +432,25 @@
                             <span class="stat-label">交易次数</span>
                             <span class="stat-value" id="tradeCount">--</span>
                         </div>
+                        <div class="stat-card">
+                            <span class="stat-label">平均盈亏</span>
+                            <span class="stat-value" id="avgPnl">--</span>
+                        </div>
                     </div>
+                </div>
+                <!-- 手动添加记录 -->
+                <div class="trade-add-form">
+                    <input type="date" id="addTradeDate" placeholder="日期" title="交易日期">
+                    <input type="text" id="addTradeCode" placeholder="股票代码" title="代码">
+                    <input type="text" id="addTradeName" placeholder="名称" title="股票名称">
+                    <select id="addTradeDirection" title="买卖方向">
+                        <option value="买入">买入</option>
+                        <option value="卖出">卖出</option>
+                    </select>
+                    <input type="number" id="addTradePrice" placeholder="价格" step="0.01" title="成交价格">
+                    <input type="number" id="addTradeQuantity" placeholder="数量(股)" title="成交数量">
+                    <input type="number" id="addTradePnl" placeholder="盈亏" step="0.01" title="盈亏金额(卖出时填)">
+                    <button class="btn btn-primary btn-small" onclick="addTradeRecord()">➕ 添加</button>
                 </div>
                 <table class="data-table">
                     <thead>
