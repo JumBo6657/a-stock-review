@@ -1,36 +1,13 @@
 /**
- * 行情中心模块 - 东方财富API真实K线（JSONP方式）
+ * 琛屾儏涓績妯″潡 - 璇绘湰鍦癒绾挎暟鎹甁SON
  */
 
-window.chartInstance = null;
 var currentChartType = 'kline';
-var stockInfoCache = {};
-
-// JSONP封装（与dashboard.js共享，但这里独立定义以防加载顺序问题）
-if (typeof window._jsonp === 'undefined') {
-    window._jsonp = function(url, timeoutMs) {
-        timeoutMs = timeoutMs || 10000;
-        return new Promise(function(resolve, reject) {
-            var cbName = '_jpcb_' + Math.random().toString(36).slice(2) + '_' + Date.now();
-            var script = document.createElement('script');
-            var timer = setTimeout(function() { cleanup(); reject(new Error('timeout')); }, timeoutMs);
-            function cleanup() {
-                clearTimeout(timer);
-                delete window[cbName];
-                if (script.parentNode) script.parentNode.removeChild(script);
-            }
-            window[cbName] = function(data) { cleanup(); resolve(data); };
-            script.src = url + (url.indexOf('?') >= 0 ? '&' : '?') + 'cb=' + cbName;
-            script.onerror = function() { cleanup(); reject(new Error('failed')); };
-            document.head.appendChild(script);
-        });
-    };
-}
 
 function initCharts() {
     initChartTabs();
     initStockSearch();
-    window.loadChart('000001');
+    loadChart('000001');
 }
 
 function initChartTabs() {
@@ -40,133 +17,119 @@ function initChartTabs() {
             currentChartType = this.dataset.chart;
             for (var j = 0; j < tabs.length; j++) tabs[j].classList.remove('active');
             this.classList.add('active');
-            var searchInput = document.getElementById('stockSearch');
-            window.loadChart(searchInput ? searchInput.value : '000001');
+            var inp = document.getElementById('stockSearch');
+            loadChart(inp ? inp.value : '000001');
         });
     }
 }
 
 function initStockSearch() {
-    var searchInput = document.getElementById('stockSearch');
-    var loadBtn = document.getElementById('loadChart');
-    if (loadBtn) {
-        loadBtn.addEventListener('click', function() {
-            window.loadChart(searchInput.value.trim() || '000001');
-        });
-    }
-    if (searchInput) {
-        searchInput.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') window.loadChart(searchInput.value.trim() || '000001');
-        });
-    }
-}
-
-// 判断交易所
-function getMarketCode(code) {
-    code = String(code).trim();
-    if (code.length < 6) code = ('000000' + code).slice(-6);
-    var first = code[0];
-    if (first === '0' || first === '3') return '0.' + code;
-    return '1.' + code;
-}
-
-// 获取K线数据
-function fetchKLineData(code, limit) {
-    limit = limit || 200;
-    var secid = getMarketCode(code);
-    var url = 'https://push2his.eastmoney.com/api/qt/stock/kline/get' +
-        '?secid=' + secid +
-        '&fields1=f1,f2,f3,f4,f5,f6' +
-        '&fields2=f51,f52,f53,f54,f55,f56,f57,f58,f59,f60,f61' +
-        '&klt=101&fqt=0&end=20500101&lmt=' + limit;
-    return window._jsonp(url).then(function(data) {
-        if (data && data.data && data.data.klines) {
-            var name = (data.data.name || code);
-            stockInfoCache[secid] = name;
-            return {
-                name: name,
-                klines: data.data.klines.map(function(line) {
-                    var p = line.split(',');
-                    return {
-                        time: p[0], open: parseFloat(p[1]), close: parseFloat(p[2]),
-                        high: parseFloat(p[3]), low: parseFloat(p[4]), volume: parseFloat(p[5]),
-                        amount: parseFloat(p[6]), amplitude: parseFloat(p[7]),
-                        changePct: parseFloat(p[8]), change: parseFloat(p[9]), turnover: parseFloat(p[10])
-                    };
-                })
-            };
-        }
-        return null;
-    });
-}
-
-// 获取分时数据
-function fetchMinuteData(code) {
-    var secid = getMarketCode(code);
-    var url = 'https://push2his.eastmoney.com/api/qt/stock/kline/get' +
-        '?secid=' + secid +
-        '&fields1=f1,f2,f3,f4,f5,f6' +
-        '&fields2=f51,f52,f53,f54,f55,f56' +
-        '&klt=1&fqt=0&end=20500101&lmt=240';
-    return window._jsonp(url).then(function(data) {
-        if (data && data.data && data.data.klines && data.data.klines.length > 0) {
-            stockInfoCache[secid] = data.data.name || code;
-            return data.data.klines.map(function(line) {
-                var p = line.split(',');
-                return { time: Math.floor(new Date(p[0]).getTime() / 1000), value: parseFloat(p[2]) };
-            });
-        }
-        return null;
-    });
+    var inp = document.getElementById('stockSearch');
+    var btn = document.getElementById('loadChart');
+    if (btn) btn.addEventListener('click', function() { loadChart(inp.value.trim() || '000001'); });
+    if (inp) inp.addEventListener('keypress', function(e) { if (e.key === 'Enter') loadChart(inp.value.trim() || '000001'); });
 }
 
 // ============================================
-// 主加载
+// 涓诲姞杞?
 // ============================================
-window.loadChart = function(code) {
+function loadChart(code) {
     var container = document.getElementById('chartArea');
     if (!container) return;
-    var searchInput = document.getElementById('stockSearch');
-    if (searchInput) searchInput.value = code;
+    var inp = document.getElementById('stockSearch');
+    if (inp) inp.value = code;
 
-    container.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-muted);font-size:14px;">⏳ 加载行情数据...</div>';
+    container.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-muted);font-size:14px;">Loading...</div>';
 
-    var secid = getMarketCode(code);
-
-    if (currentChartType === 'kline') {
-        fetchKLineData(code, 200).then(function(result) {
-            if (result && result.klines.length > 0) {
-                renderKLineChart(container, result.name || code, result.klines);
+    // 灏濊瘯鍔犺浇棰勭疆鐨凨绾挎枃浠?
+    var url = 'data/kline_' + code + '.json?' + Date.now();
+    fetch(url).then(function(r) {
+        if (!r.ok) throw new Error('no preload');
+        return r.json();
+    }).then(function(data) {
+        if (data && data.klines && data.klines.length > 0) {
+            if (currentChartType === 'kline') {
+                renderKLineChart(container, data.name || code, data.klines);
             } else {
-                container.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-muted);">❌ 无法获取数据，请检查股票代码</div>';
+                renderMinuteChart(container, data.name || code, data.klines);
             }
-        }).catch(function(e) {
-            console.error(e);
-            container.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--color-down);">❌ 网络异常，请稍后重试</div>';
-        });
-    } else {
-        fetchMinuteData(code).then(function(data) {
-            if (data && data.length > 0) {
-                renderTimeSeriesChart(container, stockInfoCache[secid] || code, data);
-            } else {
-                container.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-muted);">❌ 分时数据不可用（可能已收盘）</div>';
-            }
-        }).catch(function() {
-            container.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--color-down);">❌ 网络异常</div>';
-        });
+        } else {
+            showError(container, '鏃犳暟鎹?);
+        }
+    }).catch(function() {
+        // 灏濊瘯閫氳繃JSONP瀹炴椂鑾峰彇
+        tryJSONP(code, container);
+    });
+}
+
+function tryJSONP(code, container) {
+    var first = code[0];
+    var market = (first === '0' || first === '3') ? '0' : '1';
+    var url = 'https://push2his.eastmoney.com/api/qt/stock/kline/get' +
+        '?secid=' + market + '.' + code +
+        '&fields1=f1,f2,f3,f4,f5,f6' +
+        '&fields2=f51,f52,f53,f54,f55,f56,f57,f58,f59,f60,f61' +
+        '&klt=' + (currentChartType === 'kline' ? 101 : 1) +
+        '&fqt=0&end=20500101&lmt=200';
+
+    var cb = '_kcb_' + Date.now();
+    var script = document.createElement('script');
+    var timer = setTimeout(function() {
+        cleanup();
+        showError(container, '缃戠粶瓒呮椂');
+    }, 10000);
+
+    function cleanup() {
+        clearTimeout(timer);
+        delete window[cb];
+        if (script.parentNode) script.parentNode.removeChild(script);
     }
-};
+
+    window[cb] = function(data) {
+        cleanup();
+        if (!data || !data.data || !data.data.klines) {
+            showError(container, '鏃犳晥鏁版嵁');
+            return;
+        }
+        var name = data.data.name || code;
+        var klines = data.data.klines.map(function(line) {
+            var p = line.split(',');
+            return {
+                time: p[0],
+                open: parseFloat(p[1]), close: parseFloat(p[2]),
+                high: parseFloat(p[3]), low: parseFloat(p[4]),
+                volume: parseFloat(p[5]), amount: parseFloat(p[6]),
+                amplitude: parseFloat(p[7]), changePct: parseFloat(p[8]),
+                change: parseFloat(p[9]), turnover: parseFloat(p[10])
+            };
+        });
+        if (currentChartType === 'kline') {
+            renderKLineChart(container, name, klines);
+        } else {
+            renderMinuteChart(container, name, klines);
+        }
+    };
+
+    script.src = url + '&cb=' + cb;
+    script.onerror = function() { cleanup(); showError(container, '缃戠粶寮傚父'); };
+    document.head.appendChild(script);
+}
+
+function showError(container, msg) {
+    container.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-muted);">' + msg + '锛岃妫€鏌ヨ偂绁ㄤ唬鐮?/div>';
+}
 
 // ============================================
-// K线图
+// K绾垮浘
 // ============================================
 function renderKLineChart(container, name, rawData) {
     container.innerHTML = '';
-    var candlestickData = rawData.map(function(d) {
-        return { time: d.time, open: d.open, high: d.high, low: d.low, close: d.close };
+
+    var cd = rawData.map(function(d) {
+        return { time: d.date || d.time, open: d.open, high: d.high, low: d.low, close: d.close };
     });
-    var volumeData = rawData.map(function(d) {
-        return { time: d.time, value: d.volume, color: d.close >= d.open ? 'rgba(16,185,129,0.5)' : 'rgba(239,68,68,0.5)' };
+    var vd = rawData.map(function(d) {
+        return { time: d.date || d.time, value: d.volume, color: d.close >= d.open ? 'rgba(16,185,129,0.5)' : 'rgba(239,68,68,0.5)' };
     });
 
     var chart = LightweightCharts.createChart(container, {
@@ -183,37 +146,46 @@ function renderKLineChart(container, name, rawData) {
         borderUpColor: '#10b981', borderDownColor: '#ef4444',
         wickUpColor: '#10b981', wickDownColor: '#ef4444'
     });
-    cs.setData(candlestickData);
+    cs.setData(cd);
 
     var vs = chart.addHistogramSeries({ priceFormat: { type: 'volume' }, priceScaleId: '', scaleMargins: { top: 0.78, bottom: 0 } });
-    vs.setData(volumeData);
+    vs.setData(vd);
 
-    // MA均线
     var mas = [5, 10, 20, 60];
     var colors = ['#f59e0b', '#3b82f6', '#f59e0b', '#8b5cf6'];
-    var widths = [1, 1, 1.5, 1];
     for (var m = 0; m < mas.length; m++) {
-        var ma = calcMA(candlestickData, mas[m]);
+        var ma = calcMA(cd, mas[m]);
         if (ma.length > 0) {
-            var ls = chart.addLineSeries({ color: colors[m], lineWidth: widths[m], title: 'MA' + mas[m] });
+            var ls = chart.addLineSeries({ color: colors[m], lineWidth: m === 2 ? 1.5 : 1, title: 'MA' + mas[m] });
             ls.setData(ma);
         }
     }
 
     chart.timeScale().fitContent();
+
     var onResize = function() { chart.applyOptions({ width: container.clientWidth, height: container.clientHeight }); };
     window.addEventListener('resize', onResize);
-    window.chartInstance = chart;
 }
 
 // ============================================
-// 分时图
+// 鍒嗘椂鍥撅紙鐢ㄦ棩绾挎暟鎹繎浼硷級
 // ============================================
-function renderTimeSeriesChart(container, name, data) {
+function renderMinuteChart(container, name, klines) {
     container.innerHTML = '';
-    var firstPrice = data[0].value;
-    var lastPrice = data[data.length - 1].value;
-    var isUp = lastPrice >= firstPrice;
+
+    // 鐢ㄦ渶杩戜竴澶╃殑K绾挎暟鎹繎浼煎垎鏃?
+    var last = klines[klines.length - 1];
+    if (!last) return showError(container, '鏃犳暟鎹?);
+
+    var base = last.open;
+    var points = [
+        { time: Math.floor(new Date(last.date || last.time).getTime() / 1000) - 14400, value: base },
+        { time: Math.floor(new Date(last.date || last.time).getTime() / 1000) - 10800, value: last.low },
+        { time: Math.floor(new Date(last.date || last.time).getTime() / 1000) - 7200, value: last.high },
+        { time: Math.floor(new Date(last.date || last.time).getTime() / 1000) - 3600, value: last.close }
+    ];
+
+    var isUp = last.close >= last.open;
     var lc = isUp ? '#ef4444' : '#10b981';
     var tc = (isUp ? 'rgba(239,68,68,' : 'rgba(16,185,129,') + '0.35)';
     var bc = (isUp ? 'rgba(239,68,68,' : 'rgba(16,185,129,') + '0.05)';
@@ -227,18 +199,11 @@ function renderTimeSeriesChart(container, name, data) {
     });
 
     var as = chart.addAreaSeries({ topColor: tc, bottomColor: bc, lineColor: lc, lineWidth: 2 });
-    as.setData(data);
-
-    if (data.length > 1) {
-        var avg = data.reduce(function(s, d) { return s + d.value; }, 0) / data.length;
-        var avgs = chart.addLineSeries({ color: '#f59e0b', lineWidth: 1, lineStyle: 2, title: '均价' });
-        avgs.setData([{ time: data[0].time, value: avg }, { time: data[data.length - 1].time, value: avg }]);
-    }
+    as.setData(points);
 
     chart.timeScale().fitContent();
     var onResize = function() { chart.applyOptions({ width: container.clientWidth, height: container.clientHeight }); };
     window.addEventListener('resize', onResize);
-    window.chartInstance = chart;
 }
 
 function calcMA(data, period) {
@@ -251,6 +216,3 @@ function calcMA(data, period) {
     }
     return result;
 }
-
-// 映射全局
-window.loadChart = window.loadChart;
