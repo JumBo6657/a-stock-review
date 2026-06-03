@@ -1,5 +1,5 @@
 /**
- * 琛屾儏涓績妯″潡 - 璇绘湰鍦癒绾挎暟鎹甁SON
+ * 行情中心模块 - 读本地K线数据JSON
  */
 
 var currentChartType = 'kline';
@@ -50,7 +50,7 @@ function loadChart(code) {
                 renderMinuteChart(container, data.name || code, data.klines);
             }
         } else {
-            showError(container, '鏃犳暟鎹?);
+            showError(container, '无数据');
         }
     }).catch(function() {
         tryJSONP(code, container);
@@ -71,7 +71,7 @@ function tryJSONP(code, container) {
     var script = document.createElement('script');
     var timer = setTimeout(function() {
         cleanup();
-        showError(container, '缃戠粶瓒呮椂');
+        showError(container, '网络超时');
     }, 10000);
 
     function cleanup() {
@@ -83,7 +83,7 @@ function tryJSONP(code, container) {
     window[cb] = function(data) {
         cleanup();
         if (!data || !data.data || !data.data.klines) {
-            showError(container, '鏃犳晥鏁版嵁');
+            showError(container, '无效数据');
             return;
         }
         var name = data.data.name || code;
@@ -106,12 +106,12 @@ function tryJSONP(code, container) {
     };
 
     script.src = url + '&cb=' + cb;
-    script.onerror = function() { cleanup(); showError(container, '缃戠粶寮傚父'); };
+    script.onerror = function() { cleanup(); showError(container, '网络异常'); };
     document.head.appendChild(script);
 }
 
 function showError(container, msg) {
-    container.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-muted);">' + msg + '锛岃妫€鏌ヨ偂绁ㄤ唬鐮?/div>';
+    container.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-muted);">' + msg + '，请检查股票代码</div>';
 }
 
 function renderKLineChart(container, name, rawData) {
@@ -163,7 +163,7 @@ function renderMinuteChart(container, name, klines) {
     container.innerHTML = '';
 
     var last = klines[klines.length - 1];
-    if (!last) return showError(container, '鏃犳暟鎹?);
+    if (!last) return showError(container, '无数据');
 
     var base = last.open;
     var points = [
